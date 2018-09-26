@@ -1,20 +1,19 @@
 <template>
   <div>
-    <div class="message" v-for="(message,index) in messages" :key="index" :class="{own: message.userId == userId}">
-      <div class="user" v-if="index>0 && messages[index-1].userId != message.userId">{{message.userId}}</div>
-      <div class="user" v-if="index == 0">{{message.userId}}</div>
+    <div class="message" v-for="(message,index) in messages" :key="index" :class="{own: message.userRef.id == userRef.id}">
+      <div class="user" v-if="index>0 && messages[index-1].userRef.id != message.userRef.id">{{ message.displayName }}</div>
+      <div class="user" v-if="index == 0">{{ message.displayName }}</div>
       <div style="margin-top: 5px"></div>
       <div class="content">
         <div v-html="message.body"></div>
-        <chat-image v-if="message.image" :imgsrc="message.image" @imageLoad="imageLoad"></chat-image>
+        <chatImage v-if="message.image" :imgsrc="message.image" @imageLoad="imageLoad" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  import Image from './Image.vue'
-
+  import chatImage from './chatImage.vue'
   export default {
     data () {
       return {}
@@ -23,11 +22,11 @@
       'messages'
     ],
     components: {
-      'chat-image': Image
+      chatImage
     },
     computed: {
-      userId () {
-        return this.$store.getters.userId
+      userRef () {
+        return this.$store.getters.userRef || {}
       }
     },
     methods: {

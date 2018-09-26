@@ -9,17 +9,16 @@
   import firebaseui from 'firebaseui'
   import 'firebase/auth'
   export default {
-    mounted () {
-    },
+    data: () => ({position: null}),
     created () {
       var vm = this
       const ui = new firebaseui.auth.AuthUI(firebase.auth())
       const uiConfig = {
         callbacks: {
           signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-            vm.$store.commit('setUser', authResult.user)
-            vm.$store.commit('setUserId', authResult.user.uid)
-            console.log(authResult)
+            const position = vm.position
+            vm.$store.dispatch('getUserRef', {authUser: authResult.user, position})
+            // console.log(authResult)
             return false
           }
         },
@@ -28,6 +27,14 @@
         ]
       }
       ui.start('#firebaseui-auth-container', uiConfig)
+    },
+    mounted () {
+      const that = this
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          that.position = position.coords
+        })
+      }
     }
   }
 </script>

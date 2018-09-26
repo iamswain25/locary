@@ -1,19 +1,22 @@
 <template>
   <v-layout column fill-height>
-    <v-flex class="chat-container" style="flex-grow: 100" ref="chatContainer" v-on:scroll.passive="onScroll" @click="onScroll">
+    <v-flex class="chat-container" style="flex-grow: 100" ref="chatContainer" v-on:scroll.passive="onScroll">
       <div v-show="loading">loading...</div>
       <div v-show="empty">no more data to fetch.</div>
       <message :messages="locaries"></message>
     </v-flex>
     <v-flex style="flex-grow: 1">
-      <v-layout style="position: relative;" v-if="userId">
+      <v-layout style="position: relative;" v-if="displayName && userRef">
         <div style="width: calc(100% - 100px);">
           <v-textarea v-on:keyup.ctrl.enter="sendMessage" placeholder="Type here..." v-model="content" auto-grow rows="2" hide-details background-color="transparent" style="padding-left: 10px;" />
         </div>
         <button type="button" class="stamp" @click="sendMessage">stamp</button>
       </v-layout>
+      <v-layout v-else-if="!displayName && userRef">
+        <displayName/>
+      </v-layout>
       <v-layout v-else>
-        <firebaseui></firebaseui>
+        <firebaseui/>
       </v-layout>
     </v-flex>
   </v-layout>
@@ -22,6 +25,7 @@
 <script>
   import message from './Message.vue'
   import firebaseui from '../Auth/firebaseui'
+  import displayName from '../Auth/displayName'
   import { firestore, firebase } from '../../store/firestore'
   export default {
     data () {
@@ -30,42 +34,49 @@
         loading: false,
         empty: false,
         locaries: [],
-        position: {}
+        position: {},
+        totalChatHeight: 0
       }
     },
     firestore: {
     },
-    mounted () {
+    components: {
+      message,
+      firebaseui,
+      displayName
+    },
+    created () {
       this.loadChat()
+    },
+    mounted () {
+      const that = this
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
-          this.position = position.coords
+          that.position = position.coords
         })
       }
     },
-    components: {
-      message,
-      firebaseui
-    },
-    created () {
-      // window.addEventListener('scroll', this.onScroll)
-    },
     computed: {
-      userId () {
-        return this.$store.getters.userId
+      userRef () {
+        return this.$store.getters.userRef
+      },
+      authUser () {
+        return this.$store.getters.authUser
+      },
+      displayName () {
+        return this.$store.getters.displayName
       }
     },
     methods: {
       loadChat () {
         this.loading = true
         const that = this
-        // this.$firestoreRefs.locaries
         firestore
           .collection('locaries')
           .orderBy('createdAt', 'desc')
-          .limit(5)
+          .limit(15)
           .onSnapshot(snapshot => {
-            if (snapshot) {
+            if (!snapshot.empty) {
               snapshot.docChanges().reverse().forEach(change => {
                 if (change.type === 'added') {
                   that.locaries.push(change.doc.data())
@@ -74,14 +85,20 @@
               })
             } else {
               that.loading = false
+              that.empty = true
             }
+            that.scrollToBottom()
           })
+      },
+      setLocation () {
+
       },
       sendMessage () {
         firestore
           .collection('locaries')
           .add({
-            userId: this.$store.getters.user.uid,
+            userRef: this.$store.getters.userRef,
+            displayName: this.$store.getters.displayName,
             location: new firebase.firestore.GeoPoint(this.position.latitude, this.position.longitude),
             body: this.content,
             createdAt: new Date(),
@@ -97,7 +114,7 @@
             .collection('locaries')
             .orderBy('createdAt', 'desc')
             .startAfter(this.locaries[0].createdAt)
-            .limit(5)
+            .limit(15)
             .get()
             .then(({docs}) => {
               if (docs.length <= 0) {
@@ -106,11 +123,28 @@
                 const more = docs.map(doc => doc.data())
                 that.locaries = more.reverse().concat(that.locaries)
                 // that.locaries = that.locaries.flat()
+                that.scrollTo()
               }
               this.loading = false
             })
             .catch(that.loading = false)
         }
+      },
+      scrollTo () {
+        this.$nextTick(() => {
+          let currentHeight = this.$refs.chatContainer.scrollHeight
+          let difference = currentHeight - this.totalChatHeight
+          const container = this.$el.querySelector('.chat-container')
+          container.scrollTop = difference
+          this.totalChatHeight = currentHeight
+        })
+      },
+      scrollToBottom () {
+        this.$nextTick(() => {
+          const container = this.$el.querySelector('.chat-container')
+          container.scrollTop = container.scrollHeight
+          this.totalChatHeight = this.$refs.chatContainer.scrollHeight
+        })
       }
     },
     destroyed () {

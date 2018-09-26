@@ -20,7 +20,8 @@ import {
   VSubheader,
   VTextarea,
   VImg,
-  transitions
+  transitions,
+  VTextField
 } from 'vuetify'
 import '../node_modules/vuetify/src/stylus/app.styl'
 
@@ -39,7 +40,8 @@ Vue.use(Vuetify, {
     VSubheader,
     VTextarea,
     VImg,
-    transitions
+    transitions,
+    VTextField
   }
 })
 Vue.use(VueResource)
