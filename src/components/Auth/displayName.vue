@@ -27,7 +27,7 @@ export default {
     setDisplayName () {
       const displayName = this.displayName
       const position = this.position
-      this.$store.dispatch('setUserRef', {displayName, position})
+      this.$store.dispatch('setUserRef', { displayName, position })
     }
   }
 }

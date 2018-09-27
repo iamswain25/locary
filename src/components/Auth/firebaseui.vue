@@ -9,7 +9,7 @@
   import firebaseui from 'firebaseui'
   import 'firebase/auth'
   export default {
-    data: () => ({position: null}),
+    data: () => ({ position: null }),
     created () {
       var vm = this
       const ui = new firebaseui.auth.AuthUI(firebase.auth())
@@ -17,7 +17,7 @@
         callbacks: {
           signInSuccessWithAuthResult: function (authResult, redirectUrl) {
             const position = vm.position
-            vm.$store.dispatch('getUserRef', {authUser: authResult.user, position})
+            vm.$store.dispatch('getUserRef', { authUser: authResult.user, position })
             // console.log(authResult)
             return false
           }

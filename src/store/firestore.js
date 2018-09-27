@@ -10,4 +10,4 @@ firebase.initializeApp({
 })
 const firestore = firebase.firestore()
 firestore.settings({ timestampsInSnapshots: true })
-export {firestore, firebase}
+export { firestore, firebase }

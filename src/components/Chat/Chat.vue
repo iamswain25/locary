@@ -13,10 +13,10 @@
         <button type="button" class="stamp" @click="sendMessage">stamp</button>
       </v-layout>
       <v-layout v-else-if="!displayName && userRef">
-        <displayName/>
+        <displayName />
       </v-layout>
       <v-layout v-else>
-        <firebaseui/>
+        <firebaseui />
       </v-layout>
     </v-flex>
   </v-layout>
@@ -27,6 +27,7 @@
   import firebaseui from '../Auth/firebaseui'
   import displayName from '../Auth/displayName'
   import { firestore, firebase } from '../../store/firestore'
+  
   export default {
     data () {
       return {
@@ -116,7 +117,7 @@
             .startAfter(this.locaries[0].createdAt)
             .limit(15)
             .get()
-            .then(({docs}) => {
+            .then(({ docs }) => {
               if (docs.length <= 0) {
                 that.empty = true
               } else {
