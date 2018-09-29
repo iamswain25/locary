@@ -1,13 +1,12 @@
-import firebase from 'firebase/app'
-import 'firebase/database'
-import 'firebase/firestore'
-// const firestore = firebase.firestore()
-const db = firebase.database()
+import { firebase, database, geo } from './firestore'
 
 const AuthModule = {
   state: {
     position: null,
     realtimePresence: null
+  },
+  getters: {
+    position: state => state.position
   },
   mutations: {
     setPosition (state, position) {
@@ -24,10 +23,7 @@ const AuthModule = {
       } else {
         position = state.position
       }
-      const geoPoint = new firebase.firestore.GeoPoint(
-        position.latitude,
-        position.longitude
-      )
+      const geoPoint = geo.point(position.latitude, position.longitude).data
       const accuracy = position.accuracy
       state.realtimePresence.update({
         geoPoint,
@@ -36,9 +32,9 @@ const AuthModule = {
     },
     rtdb_presence ({ commit, state }, { uid }) {
       const position = state.position
-      const geoPoint = new firebase.firestore.GeoPoint(position.latitude, position.longitude)
+      const geoPoint = geo.point(position.latitude, position.longitude).data
       const accuracy = position.accuracy
-      const userListRef = db.ref('presence')
+      const userListRef = database.ref('presence')
       const realtimePresence = userListRef.push()
       commit('setRealtimePresence', realtimePresence)
       // We'll create two constants which we will write to
@@ -61,7 +57,7 @@ const AuthModule = {
       // Create a reference to the special '.info/connected' path in
       // Realtime Database. This path returns `true` when connected
       // and `false` when disconnected.
-      db.ref('.info/connected').on('value', function (snapshot) {
+      database.ref('.info/connected').on('value', function (snapshot) {
         if (snapshot.val()) {
           // if we lose network then remove this user from the list
           realtimePresence.onDisconnect().remove()

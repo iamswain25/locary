@@ -48,6 +48,7 @@ export default new Vuex.Store({
     clearError ({ commit }) {
       commit('clearError')
     },
+    /* always called whether displayName exists */
     getUserRef ({ commit, dispatch }, { authUser, position }) {
       commit('setAuthUser', authUser)
       commit('setPosition', position)
@@ -64,6 +65,7 @@ export default new Vuex.Store({
         }
       })
     },
+    /* only called whether displayName doens't exist */
     setUserRef ({ commit, state, dispatch }, { displayName, position }) {
       commit('setPosition', position)
       const uid = state.authUser.uid

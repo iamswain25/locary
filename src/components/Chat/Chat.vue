@@ -23,135 +23,139 @@
 </template>
 
 <script>
-  import message from './Message.vue'
-  import firebaseui from '../Auth/firebaseui'
-  import displayName from '../Auth/displayName'
-  import { firestore, firebase } from '../../store/firestore'
-  
-  export default {
-    data () {
-      return {
-        content: '',
-        loading: false,
-        empty: false,
-        locaries: [],
-        position: {},
-        totalChatHeight: 0
-      }
+import message from './Message.vue'
+import firebaseui from '../Auth/firebaseui'
+import displayName from '../Auth/displayName'
+import { firestore, geo } from '../../store/firestore'
+
+export default {
+  data () {
+    return {
+      content: '',
+      loading: false,
+      empty: false,
+      locaries: [],
+      position: {},
+      totalChatHeight: 0
+    }
+  },
+  components: {
+    message,
+    firebaseui,
+    displayName
+  },
+  created () {
+    this.loadChat()
+  },
+  computed: {
+    userRef () {
+      return this.$store.getters.userRef
     },
-    firestore: {
+    authUser () {
+      return this.$store.getters.authUser
     },
-    components: {
-      message,
-      firebaseui,
-      displayName
+    displayName () {
+      return this.$store.getters.displayName
+    }
+  },
+  methods: {
+    loadChat () {
+      this.loading = true
+      const coords = this.$store.getters.position
+      const center = geo.point(coords.latitude, coords.longitude).data
+      const locaries = geo.collection('locaries')
+      const that = this
+      // .orderBy('createdAt', 'desc')
+      // .limit(15)
+      const query = locaries.within(center, 0.01, 'location')
+      query.subscribe(snapshot => {
+        debugger
+        if (!snapshot.empty) {
+          snapshot.docChanges().reverse().forEach(change => {
+            if (change.type === 'added') {
+              that.locaries.push(change.doc.data())
+              that.loading = false
+            }
+          })
+        } else {
+          that.loading = false
+          that.empty = true
+        }
+        that.scrollToBottom()
+      })
     },
-    created () {
-      this.loadChat()
+    setLocation () {
+
     },
-    mounted () {
+    watchLocation () {
       const that = this
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
+        navigator.geolocation.watchPosition(position => {
+          console.log(position)
           that.position = position.coords
+          if (that.authUser) {
+            that.$store.dispatch('updateLocation', { position: position.coords })
+          }
         })
       }
     },
-    computed: {
-      userRef () {
-        return this.$store.getters.userRef
-      },
-      authUser () {
-        return this.$store.getters.authUser
-      },
-      displayName () {
-        return this.$store.getters.displayName
-      }
+    sendMessage () {
+      geo.collection('locaries')
+        .add({
+          userRef: this.$store.getters.userRef,
+          displayName: this.$store.getters.displayName,
+          location: geo.point(this.position.latitude, this.position.longitude).data,
+          body: this.content,
+          createdAt: new Date(),
+          accuracy: this.position.accuracy
+        })
+        .then(() => { this.content = '' })
     },
-    methods: {
-      loadChat () {
+    onScroll (ev) {
+      const that = this
+      if (ev.target.scrollTop < 1 && !this.empty) {
         this.loading = true
-        const that = this
         firestore
           .collection('locaries')
           .orderBy('createdAt', 'desc')
+          .startAfter(this.locaries[0].createdAt)
           .limit(15)
-          .onSnapshot(snapshot => {
-            if (!snapshot.empty) {
-              snapshot.docChanges().reverse().forEach(change => {
-                if (change.type === 'added') {
-                  that.locaries.push(change.doc.data())
-                  that.loading = false
-                }
-              })
-            } else {
-              that.loading = false
+          .get()
+          .then(({ docs }) => {
+            if (docs.length <= 0) {
               that.empty = true
+            } else {
+              const more = docs.map(doc => doc.data())
+              that.locaries = more.reverse().concat(that.locaries)
+              // that.locaries = that.locaries.flat()
+              that.scrollTo()
             }
-            that.scrollToBottom()
+            this.loading = false
           })
-      },
-      setLocation () {
-
-      },
-      sendMessage () {
-        firestore
-          .collection('locaries')
-          .add({
-            userRef: this.$store.getters.userRef,
-            displayName: this.$store.getters.displayName,
-            location: new firebase.firestore.GeoPoint(this.position.latitude, this.position.longitude),
-            body: this.content,
-            createdAt: new Date(),
-            accuracy: this.position.accuracy
-          })
-          .then(() => { this.content = '' })
-      },
-      onScroll (ev) {
-        const that = this
-        if (ev.target.scrollTop < 1 && !this.empty) {
-          this.loading = true
-          firestore
-            .collection('locaries')
-            .orderBy('createdAt', 'desc')
-            .startAfter(this.locaries[0].createdAt)
-            .limit(15)
-            .get()
-            .then(({ docs }) => {
-              if (docs.length <= 0) {
-                that.empty = true
-              } else {
-                const more = docs.map(doc => doc.data())
-                that.locaries = more.reverse().concat(that.locaries)
-                // that.locaries = that.locaries.flat()
-                that.scrollTo()
-              }
-              this.loading = false
-            })
-            .catch(that.loading = false)
-        }
-      },
-      scrollTo () {
-        this.$nextTick(() => {
-          let currentHeight = this.$refs.chatContainer.scrollHeight
-          let difference = currentHeight - this.totalChatHeight
-          const container = this.$el.querySelector('.chat-container')
-          container.scrollTop = difference
-          this.totalChatHeight = currentHeight
-        })
-      },
-      scrollToBottom () {
-        this.$nextTick(() => {
-          const container = this.$el.querySelector('.chat-container')
-          container.scrollTop = container.scrollHeight
-          this.totalChatHeight = this.$refs.chatContainer.scrollHeight
-        })
+          .catch(that.loading = false)
       }
     },
-    destroyed () {
-      // window.removeEventListener('scroll', this.onScroll)
+    scrollTo () {
+      this.$nextTick(() => {
+        let currentHeight = this.$refs.chatContainer.scrollHeight
+        let difference = currentHeight - this.totalChatHeight
+        const container = this.$el.querySelector('.chat-container')
+        container.scrollTop = difference
+        this.totalChatHeight = currentHeight
+      })
+    },
+    scrollToBottom () {
+      this.$nextTick(() => {
+        const container = this.$el.querySelector('.chat-container')
+        container.scrollTop = container.scrollHeight
+        this.totalChatHeight = this.$refs.chatContainer.scrollHeight
+      })
     }
+  },
+  destroyed () {
+    // window.removeEventListener('scroll', this.onScroll)
   }
+}
 </script>
 
 <style>

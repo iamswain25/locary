@@ -13,28 +13,28 @@
 </template>
 
 <script>
-  import chatImage from './chatImage.vue'
-  export default {
-    data () {
-      return {}
-    },
-    props: [
-      'messages'
-    ],
-    components: {
-      chatImage
-    },
-    computed: {
-      userRef () {
-        return this.$store.getters.userRef || {}
-      }
-    },
-    methods: {
-      imageLoad () {
-        // this.$emit('imageLoad')
-      }
+import chatImage from './chatImage.vue'
+export default {
+  data () {
+    return {}
+  },
+  props: [
+    'messages'
+  ],
+  components: {
+    chatImage
+  },
+  computed: {
+    userRef () {
+      return this.$store.getters.userRef || {}
+    }
+  },
+  methods: {
+    imageLoad () {
+      // this.$emit('imageLoad')
     }
   }
+}
 </script>
 
 <style>
