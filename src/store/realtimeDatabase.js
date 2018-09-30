@@ -1,4 +1,4 @@
-import { firebase, database, geo } from './firestore'
+import { firebase, database, GeoPoint } from './firestore'
 
 const AuthModule = {
   state: {
@@ -9,6 +9,9 @@ const AuthModule = {
     position: state => state.position
   },
   mutations: {
+    update_rtdb_presence (state, payload) {
+      state.realtimePresence.update(payload)
+    },
     setPosition (state, position) {
       state.position = position
     },
@@ -17,13 +20,9 @@ const AuthModule = {
     }
   },
   actions: {
-    updateLocation ({ commit, state }, { position }) {
-      if (position) {
-        commit('setPosition', position)
-      } else {
-        position = state.position
-      }
-      const geoPoint = geo.point(position.latitude, position.longitude).data
+    updateLocation ({ state }) {
+      const position = state.position
+      const geoPoint = new GeoPoint(position.latitude, position.longitude)
       const accuracy = position.accuracy
       state.realtimePresence.update({
         geoPoint,
@@ -32,16 +31,18 @@ const AuthModule = {
     },
     rtdb_presence ({ commit, state }, { uid }) {
       const position = state.position
-      const geoPoint = geo.point(position.latitude, position.longitude).data
+      const geoPoint = new GeoPoint(position.latitude, position.longitude)
       const accuracy = position.accuracy
       const userListRef = database.ref('presence')
       const realtimePresence = userListRef.push()
+      const displayName = 'anonymous'
       commit('setRealtimePresence', realtimePresence)
       // We'll create two constants which we will write to
       // the Realtime database when this device is offline
       // or online.
       const isOfflineForDatabase = {
         uid,
+        displayName,
         state: 'offline',
         last_changed: firebase.database.ServerValue.TIMESTAMP,
         geoPoint,
@@ -49,6 +50,7 @@ const AuthModule = {
       }
       const isOnlineForDatabase = {
         uid,
+        displayName,
         state: 'online',
         last_changed: firebase.database.ServerValue.TIMESTAMP,
         geoPoint,

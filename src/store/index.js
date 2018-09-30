@@ -49,16 +49,16 @@ export default new Vuex.Store({
       commit('clearError')
     },
     /* always called whether displayName exists */
-    getUserRef ({ commit, dispatch }, { authUser, position }) {
+    getUserRef ({ commit }, { authUser }) {
       commit('setAuthUser', authUser)
-      commit('setPosition', position)
       const uid = authUser.uid
       const userRef = firestore.collection('users').doc(uid)
       userRef.get().then(doc => {
         if (doc.exists) {
+          const displayName = doc.get('displayName')
           commit('setUserRef', userRef)
-          commit('setDisplayName', doc.get('displayName'))
-          dispatch('rtdb_presence', { uid })
+          commit('setDisplayName', displayName)
+          commit('update_rtdb_presence', { uid, displayName })
         } else {
           commit('setUserRef', null)
           commit('setDisplayName', null)
@@ -66,8 +66,7 @@ export default new Vuex.Store({
       })
     },
     /* only called whether displayName doens't exist */
-    setUserRef ({ commit, state, dispatch }, { displayName, position }) {
-      commit('setPosition', position)
+    setUserRef ({ commit, state, dispatch }, { displayName }) {
       const uid = state.authUser.uid
       const userData = {
         displayName

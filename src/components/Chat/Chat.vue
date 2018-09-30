@@ -26,7 +26,8 @@
 import message from './Message.vue'
 import firebaseui from '../Auth/firebaseui'
 import displayName from '../Auth/displayName'
-import { firestore, geo } from '../../store/firestore'
+import { firestore, geoLocary, GeoPoint } from '../../store/firestore'
+import uuidV4 from 'uuid/v4'
 
 export default {
   data () {
@@ -35,7 +36,6 @@ export default {
       loading: false,
       empty: false,
       locaries: [],
-      position: {},
       totalChatHeight: 0
     }
   },
@@ -44,8 +44,17 @@ export default {
     firebaseui,
     displayName
   },
-  created () {
-    this.loadChat()
+  mounted () {
+    const store = this.$store
+    const authUser = this.authUser
+    const uid = (authUser) ? authUser.uid : uuidV4()
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(position => {
+        store.commit('setPosition', position.coords)
+        store.dispatch('rtdb_presence', { uid })
+        this.loadChat(position.coords)
+      })
+    }
   },
   computed: {
     userRef () {
@@ -60,28 +69,18 @@ export default {
   },
   methods: {
     loadChat () {
+      const that = this
       this.loading = true
       const coords = this.$store.getters.position
-      const center = geo.point(coords.latitude, coords.longitude).data
-      const locaries = geo.collection('locaries')
-      const that = this
-      // .orderBy('createdAt', 'desc')
-      // .limit(15)
-      const query = locaries.within(center, 0.01, 'location')
-      query.subscribe(snapshot => {
-        debugger
-        if (!snapshot.empty) {
-          snapshot.docChanges().reverse().forEach(change => {
-            if (change.type === 'added') {
-              that.locaries.push(change.doc.data())
-              that.loading = false
-            }
-          })
-        } else {
-          that.loading = false
-          that.empty = true
-        }
-        that.scrollToBottom()
+      const center = new GeoPoint(coords.latitude, coords.longitude)
+      // const that = this
+      const radius = 10
+      const geoQuery = geoLocary.query({ center, radius })
+      geoQuery.on('ready', function () { that.loading = false })
+      geoQuery.on('key_entered', function (key, doc, distance) {
+        doc.distance = distance
+        that.locaries.push(doc)
+        that.loading = false
       })
     },
     setLocation () {
@@ -89,27 +88,34 @@ export default {
     },
     watchLocation () {
       const that = this
+      const store = this.$store
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(position => {
           console.log(position)
-          that.position = position.coords
+          store.commit('setPosition', position.coords)
+          store.dispatch('updateLocation')
           if (that.authUser) {
-            that.$store.dispatch('updateLocation', { position: position.coords })
+            that.loadChat()
           }
         })
       }
     },
     sendMessage () {
-      geo.collection('locaries')
+      const store = this.$store
+      const coords = this.$store.getters.position
+      geoLocary
         .add({
-          userRef: this.$store.getters.userRef,
-          displayName: this.$store.getters.displayName,
-          location: geo.point(this.position.latitude, this.position.longitude).data,
+          userRef: store.getters.userRef,
+          displayName: store.getters.displayName,
+          coordinates: new GeoPoint(coords.latitude, coords.longitude),
           body: this.content,
           createdAt: new Date(),
-          accuracy: this.position.accuracy
+          accuracy: coords.accuracy
         })
-        .then(() => { this.content = '' })
+        .then((docRef) => {
+          console.log(docRef)
+          this.content = ''
+        })
     },
     onScroll (ev) {
       const that = this

@@ -9,16 +9,13 @@ import { firebase } from '../../store/firestore'
 import firebaseui from 'firebaseui'
 import 'firebase/auth'
 export default {
-  data: () => ({ position: null }),
   created () {
-    var vm = this
+    var store = this.$store
     const ui = new firebaseui.auth.AuthUI(firebase.auth())
     const uiConfig = {
       callbacks: {
         signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-          const position = vm.position
-          vm.$store.dispatch('getUserRef', { authUser: authResult.user, position })
-          // console.log(authResult)
+          store.dispatch('getUserRef', { authUser: authResult.user })
           return false
         }
       },
@@ -27,14 +24,6 @@ export default {
       ]
     }
     ui.start('#firebaseui-auth-container', uiConfig)
-  },
-  mounted () {
-    const that = this
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(position => {
-        that.position = position.coords
-      })
-    }
   }
 }
 </script>

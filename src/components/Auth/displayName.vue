@@ -13,21 +13,10 @@ export default {
       position: null
     }
   },
-  created () {
-  },
-  mounted () {
-    const that = this
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(position => {
-        that.position = position.coords
-      })
-    }
-  },
   methods: {
     setDisplayName () {
       const displayName = this.displayName
-      const position = this.position
-      this.$store.dispatch('setUserRef', { displayName, position })
+      this.$store.dispatch('setUserRef', { displayName })
     }
   }
 }
