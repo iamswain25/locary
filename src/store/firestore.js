@@ -16,4 +16,5 @@ const database = firebase.database()
 firestore.settings({ timestampsInSnapshots: true })
 const geoLocary = new GeoFirestore(firestore.collection('locaries'))
 const GeoPoint = firebase.firestore.GeoPoint
-export { firestore, firebase, database, geoLocary, GeoPoint }
+const Timestamp = firebase.firestore.Timestamp
+export { firestore, firebase, database, geoLocary, GeoPoint, Timestamp }

@@ -4,16 +4,16 @@
       <div class="user" v-if="index>0 && messages[index-1].userRef.id != message.userRef.id">{{ message.displayName }}</div>
       <div class="user" v-if="index == 0">{{ message.displayName }}</div>
       <div style="margin-top: 5px"></div>
+      <span class="time">{{((t) => `${t.getHours()}:${t.getMinutes()}` )(message.createdAt.toDate())}}</span>
       <div class="content">
         <div v-html="message.body"></div>
-        <chatImage v-if="message.image" :imgsrc="message.image" @imageLoad="imageLoad" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import chatImage from './chatImage.vue'
+import { Timestamp } from '../../store/firestore'
 export default {
   data () {
     return {}
@@ -22,7 +22,6 @@ export default {
     'messages'
   ],
   components: {
-    chatImage
   },
   computed: {
     userRef () {
@@ -30,8 +29,8 @@ export default {
     }
   },
   methods: {
-    imageLoad () {
-      // this.$emit('imageLoad')
+    timestamp (seconds) {
+      return new Timestamp(seconds)
     }
   }
 }

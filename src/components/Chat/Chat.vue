@@ -80,6 +80,7 @@ export default {
       geoQuery.on('key_entered', function (key, doc, distance) {
         doc.distance = distance
         that.locaries.push(doc)
+        that.locaries.sort((a, b) => a.createdAt.toMillis() > b.createdAt.toMillis())
         that.loading = false
       })
     },
@@ -175,7 +176,7 @@ export default {
   overflow-y: auto;
   padding: 10px;
   background-color: #f2f2f2;
-  max-height: calc(100vh - 8.7rem);
+  max-height: calc(100vh - 9.2rem);
 }
 .message {
   margin-bottom: 3px;
@@ -184,7 +185,7 @@ export default {
   text-align: right;
 }
 .message.own .content {
-  background-color: lightskyblue;
+  background-color: orange;
 }
 .chat-container .user {
   font-size: 18px;
@@ -192,19 +193,19 @@ export default {
 }
 .chat-container .content {
   padding: 8px;
-  background-color: lightgreen;
+  background-color: aliceblue;
   border-radius: 10px;
   display: inline-block;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14),
     0 2px 1px -1px rgba(0, 0, 0, 0.12);
-  max-width: 50%;
+  max-width: 80%;
   word-wrap: break-word;
 }
-@media (max-width: 480px) {
+/* @media (max-width: 480px) {
   .chat-container .content {
-    max-width: 60%;
+    max-width: 80%;
   }
-}
+} */
 .stamp {
   font-size: 16px;
   align-self: center;
