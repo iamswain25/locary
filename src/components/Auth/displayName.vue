@@ -16,7 +16,8 @@ export default {
   methods: {
     setDisplayName () {
       const displayName = this.displayName
-      this.$store.dispatch('setUserRef', { displayName })
+      const createdAt = new Date()
+      this.$store.dispatch('setUserRef', { displayName, createdAt })
     }
   }
 }

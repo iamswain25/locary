@@ -1,18 +1,18 @@
 <template>
   <v-layout column fill-height>
-    <v-flex class="chat-container" style="flex-grow: 100" ref="chatContainer" v-on:scroll.passive="onScroll">
-      <div v-show="loading">loading...</div>
+    <v-flex class="chat-container" style="flex-grow: 100" ref="chatContainer">
       <div v-show="empty">no more data to fetch.</div>
+      <div v-show="loading">loading...</div>
       <message :messages="locaries"></message>
     </v-flex>
     <v-flex style="flex-grow: 1">
-      <v-layout style="position: relative;" v-if="displayName && userRef">
+      <v-layout style="position: relative;" v-if="displayName !== null && userRef !== null">
         <div style="width: calc(100% - 100px);">
           <v-textarea v-on:keyup.ctrl.enter="sendMessage" placeholder="Type here..." v-model="content" auto-grow rows="2" hide-details background-color="transparent" style="padding-left: 10px;" />
         </div>
         <button type="button" class="stamp" @click="sendMessage">stamp</button>
       </v-layout>
-      <v-layout v-else-if="!displayName && userRef">
+      <v-layout v-else-if="displayName === null && authUser !== null">
         <displayName />
       </v-layout>
       <v-layout v-else>
@@ -26,7 +26,7 @@
 import message from './Message.vue'
 import firebaseui from '../Auth/firebaseui'
 import displayName from '../Auth/displayName'
-import { firestore, geoLocary, GeoPoint } from '../../store/firestore'
+import { geoLocary, GeoPoint } from '../../store/firestore'
 import uuidV4 from 'uuid/v4'
 
 export default {
@@ -34,9 +34,11 @@ export default {
     return {
       content: '',
       loading: false,
-      empty: false,
+      empty: true,
       locaries: [],
-      totalChatHeight: 0
+      totalChatHeight: 0,
+      geoQuery: null,
+      queryLimit: 5
     }
   },
   components: {
@@ -45,6 +47,7 @@ export default {
     displayName
   },
   mounted () {
+    this.loading = true
     const store = this.$store
     const authUser = this.authUser
     const uid = (authUser) ? authUser.uid : uuidV4()
@@ -52,7 +55,9 @@ export default {
       navigator.geolocation.getCurrentPosition(position => {
         store.commit('setPosition', position.coords)
         store.dispatch('rtdb_presence', { uid })
-        this.loadChat(position.coords)
+        store.dispatch('getListeningRadius')
+          .then(this.loadChat)
+        // this.loadChat()
       })
     }
   },
@@ -65,6 +70,9 @@ export default {
     },
     displayName () {
       return this.$store.getters.displayName
+    },
+    radius () {
+      return this.$store.getters.listeningRadius
     }
   },
   methods: {
@@ -72,20 +80,27 @@ export default {
       const that = this
       this.loading = true
       const coords = this.$store.getters.position
+      const radius = this.radius
       const center = new GeoPoint(coords.latitude, coords.longitude)
-      // const that = this
-      const radius = 10
+      // const query = ref => ref.limit(this.queryLimit) // limit(8) .orderBy('d.createdAt', 'desc')
       const geoQuery = geoLocary.query({ center, radius })
-      geoQuery.on('ready', function () { that.loading = false })
+      this.geoQuery = geoQuery
+      geoQuery.on('ready', function () {
+        that.locaries.sort((a, b) => (a.createdAt.toMillis() >= b.createdAt.toMillis()) ? 1 : -1)
+        that.loading = false
+        that.scrollToBottom()
+      })
       geoQuery.on('key_entered', function (key, doc, distance) {
         doc.distance = distance
         that.locaries.push(doc)
-        that.locaries.sort((a, b) => a.createdAt.toMillis() > b.createdAt.toMillis())
-        that.loading = false
       })
+      this.watchLocation()
     },
-    setLocation () {
-
+    updateLocaries () {
+      const coords = this.$store.getters.position
+      const radius = this.radius
+      const center = new GeoPoint(coords.latitude, coords.longitude)
+      this.geoQuery.updateCriteria({ center, radius })
     },
     watchLocation () {
       const that = this
@@ -95,9 +110,7 @@ export default {
           console.log(position)
           store.commit('setPosition', position.coords)
           store.dispatch('updateLocation')
-          if (that.authUser) {
-            that.loadChat()
-          }
+          that.updateLocaries()
         })
       }
     },
@@ -122,24 +135,14 @@ export default {
       const that = this
       if (ev.target.scrollTop < 1 && !this.empty) {
         this.loading = true
-        firestore
-          .collection('locaries')
-          .orderBy('createdAt', 'desc')
-          .startAfter(this.locaries[0].createdAt)
-          .limit(15)
-          .get()
-          .then(({ docs }) => {
-            if (docs.length <= 0) {
-              that.empty = true
-            } else {
-              const more = docs.map(doc => doc.data())
-              that.locaries = more.reverse().concat(that.locaries)
-              // that.locaries = that.locaries.flat()
-              that.scrollTo()
-            }
-            this.loading = false
-          })
-          .catch(that.loading = false)
+        this.queryLimit += 5
+        const query = ref => ref.limit(this.queryLimit) // limit(8) .orderBy('d.createdAt', 'desc')
+        this.geoQuery.updateCriteria({ query })
+        this.geoQuery.on('ready', function () {
+          that.locaries.sort((a, b) => a.createdAt.toMillis() > b.createdAt.toMillis())
+          that.loading = false
+          that.scrollTo()
+        })
       }
     },
     scrollTo () {
@@ -161,6 +164,13 @@ export default {
   },
   destroyed () {
     // window.removeEventListener('scroll', this.onScroll)
+  },
+  watch: {
+    radius () {
+      if (this.geoQuery !== null) {
+        this.updateLocaries()
+      }
+    }
   }
 }
 </script>

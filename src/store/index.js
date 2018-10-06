@@ -1,12 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-// import { firestore } from './firestore'
+import { userCollection } from './firestore'
 import realtimeDatabase from './realtimeDatabase'
-import firebase from 'firebase/app'
-import 'firebase/database'
-import 'firebase/firestore'
-const firestore = firebase.firestore()
-// const db = firebase.database()
 Vue.use(Vuex)
 
 export default new Vuex.Store({
@@ -52,10 +47,14 @@ export default new Vuex.Store({
     getUserRef ({ commit }, { authUser }) {
       commit('setAuthUser', authUser)
       const uid = authUser.uid
-      const userRef = firestore.collection('users').doc(uid)
+      const userRef = userCollection.doc(uid)
       userRef.get().then(doc => {
         if (doc.exists) {
           const displayName = doc.get('displayName')
+          const loggedAt = new Date()
+          userRef.collection('userLog').add({
+            loggedAt
+          })
           commit('setUserRef', userRef)
           commit('setDisplayName', displayName)
           commit('update_rtdb_presence', { uid, displayName })
@@ -66,15 +65,16 @@ export default new Vuex.Store({
       })
     },
     /* only called whether displayName doens't exist */
-    setUserRef ({ commit, state, dispatch }, { displayName }) {
+    setUserRef ({ commit, state, dispatch }, userData) {
       const uid = state.authUser.uid
-      const userData = {
-        displayName
-      }
-      const userRef = firestore.collection('users').doc(uid)
+      const userRef = userCollection.doc(uid)
       userRef.set(userData)
+      const loggedAt = new Date()
+      userRef.collection('userLog').add({
+        loggedAt
+      })
       commit('setUserRef', userRef)
-      commit('setDisplayName', displayName)
+      commit('setDisplayName', userData.displayName)
       dispatch('rtdb_presence', { uid })
     }
   },

@@ -4,10 +4,10 @@
       <div class="user" v-if="index>0 && messages[index-1].userRef.id != message.userRef.id">{{ message.displayName }}</div>
       <div class="user" v-if="index == 0">{{ message.displayName }}</div>
       <div style="margin-top: 5px"></div>
-      <span class="time">{{((t) => `${t.getHours()}:${t.getMinutes()}` )(message.createdAt.toDate())}}</span>
-      <div class="content">
-        <div v-html="message.body"></div>
-      </div>
+      <v-layout align-end>
+        <v-flex  class="content"><div v-html="message.body"></div></v-flex>
+        <v-flex><span class="time">{{(t => `${t.toISOString().substring(11,16)}` )(message.createdAt.toDate())}}</span></v-flex>
+      </v-layout>
     </div>
   </div>
 </template>
@@ -36,7 +36,12 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
+.time {
+  display: block;
+  bottom: 0;
+  float: right;
+}
 span.emoji {
   font-size: 20px;
   vertical-align: middle;

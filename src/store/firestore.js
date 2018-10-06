@@ -2,6 +2,7 @@ import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/database'
 import { GeoFirestore } from 'geofirestore'
+import GeoFire from 'geofire'
 
 firebase.initializeApp({
   apiKey: 'AIzaSyDgPNnncRq9d3KylyRDUdZqzIf-aCh0694',
@@ -15,6 +16,7 @@ const firestore = firebase.firestore()
 const database = firebase.database()
 firestore.settings({ timestampsInSnapshots: true })
 const geoLocary = new GeoFirestore(firestore.collection('locaries'))
+const userCollection = firestore.collection('users')
 const GeoPoint = firebase.firestore.GeoPoint
 const Timestamp = firebase.firestore.Timestamp
-export { firestore, firebase, database, geoLocary, GeoPoint, Timestamp }
+export { firestore, firebase, database, geoLocary, GeoPoint, Timestamp, userCollection, GeoFire }
