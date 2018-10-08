@@ -1,6 +1,12 @@
 import { firebase, database, GeoPoint, GeoFire } from './firestore'
 const userListRef = database.ref('presence')
 const geoPresenceRef = new GeoFire(userListRef)
+
+const onlineStatus = {
+  state: 'online',
+  last_changed: firebase.database.ServerValue.TIMESTAMP
+}
+
 const AuthModule = {
   state: {
     position: null,
@@ -13,6 +19,7 @@ const AuthModule = {
   },
   mutations: {
     update_rtdb_presence (state, payload) {
+      Object.assign(onlineStatus, payload)
       state.realtimePresence.update(payload)
     },
     setPosition (state, position) {
@@ -28,7 +35,7 @@ const AuthModule = {
   actions: {
     getListeningRadius ({ state, commit }) {
       const position = state.position
-      const getMaxDistance = (activeUsers) => {
+      const getMaxDistance = activeUsers => {
         const values = Object.values(activeUsers).sort()
         console.log(values)
         return values[19] || 10000
@@ -71,47 +78,40 @@ const AuthModule = {
     },
     updateLocation ({ state }) {
       const position = state.position
-      const geoPoint = new GeoPoint(position.latitude, position.longitude)
+      const coordinates = new GeoPoint(position.latitude, position.longitude)
       const baseCoordinates = [position.latitude, position.longitude]
       const accuracy = position.accuracy
       geoPresenceRef.set(state.realtimePresence.key, baseCoordinates)
-      state.realtimePresence.update({
-        geoPoint,
+      Object.assign(onlineStatus, {
+        coordinates,
         accuracy
       })
+      state.realtimePresence.update(onlineStatus)
     },
     rtdb_presence ({ commit, state }, { uid }) {
       const position = state.position
       const coordinates = new GeoPoint(position.latitude, position.longitude)
       const baseCoordinates = [position.latitude, position.longitude]
       const accuracy = position.accuracy
-      const realtimePresence = userListRef.push()
-      const displayName = 'anonymous'
-      commit('setRealtimePresence', realtimePresence)
-      const isOfflineForDatabase = {
-        uid,
-        displayName,
-        state: 'offline',
-        last_changed: firebase.database.ServerValue.TIMESTAMP,
+      Object.assign(onlineStatus, {
         coordinates,
-        accuracy
-      }
-      const isOnlineForDatabase = Object.assign({}, isOfflineForDatabase, {
-        state: 'online'
+        accuracy,
+        uid
       })
+      const realtimePresence = userListRef.push()
+      commit('setRealtimePresence', realtimePresence)
       database.ref('.info/connected').on('value', function (snapshot) {
         if (snapshot.val()) {
           // if we lose network then remove this user from the list
           realtimePresence
             .onDisconnect()
             .remove()
-            .then(() => {
-              geoPresenceRef.set(realtimePresence.key, baseCoordinates)
-              realtimePresence.update(isOnlineForDatabase)
-            })
+            .then(geoPresenceRef.set(realtimePresence.key, baseCoordinates))
+            .then(realtimePresence.update(onlineStatus))
         } else {
           // If we're not currently connected
-          realtimePresence.update(isOfflineForDatabase)
+          const offlineStatus = { ...onlineStatus, state: 'offline' }
+          realtimePresence.update(offlineStatus)
         }
       })
     }

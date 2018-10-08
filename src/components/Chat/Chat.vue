@@ -26,14 +26,13 @@
 import message from './Message.vue'
 import firebaseui from '../Auth/firebaseui'
 import displayName from '../Auth/displayName'
-import { geoLocary, GeoPoint } from '../../store/firestore'
+import { geoLocary, GeoPoint, Timestamp } from '../../store/firestore'
 import uuidV4 from 'uuid/v4'
 
 export default {
   data () {
     return {
       content: '',
-      loading: false,
       empty: true,
       locaries: [],
       totalChatHeight: 0,
@@ -47,7 +46,7 @@ export default {
     displayName
   },
   mounted () {
-    this.loading = true
+    this.$store.commit('setLoading', true)
     const store = this.$store
     const authUser = this.authUser
     const uid = (authUser) ? authUser.uid : uuidV4()
@@ -73,12 +72,15 @@ export default {
     },
     radius () {
       return this.$store.getters.listeningRadius
+    },
+    loading () {
+      return this.$store.getters.loading
     }
   },
   methods: {
     loadChat () {
       const that = this
-      this.loading = true
+      // this.$store.commit('setLoading', true)
       const coords = this.$store.getters.position
       const radius = this.radius
       const center = new GeoPoint(coords.latitude, coords.longitude)
@@ -87,12 +89,26 @@ export default {
       this.geoQuery = geoQuery
       geoQuery.on('ready', function () {
         that.locaries.sort((a, b) => (a.createdAt.toMillis() >= b.createdAt.toMillis()) ? 1 : -1)
-        that.loading = false
-        that.scrollToBottom()
+        if (that.loading) {
+          that.scrollToBottom()
+        }
       })
       geoQuery.on('key_entered', function (key, doc, distance) {
-        doc.distance = distance
+        if (doc.userRef === that.userRef) {
+          doc.isRead = true
+        }
+        Object.assign(doc, { key, distance })
         that.locaries.push(doc)
+      })
+      geoQuery.on('key_modified', function (key, doc, distance) {
+        // console.log(`key_modified ${key}`, doc)
+        const modifiedIndex = that.locaries.findIndex(doc => doc.key === key)
+        Object.assign(that.locaries[modifiedIndex], doc)
+      })
+      geoQuery.on('key_exited', function (key, doc, distance) {
+        // console.log(`key_exited ${key}, doc)
+        const modifiedIndex = that.locaries.findIndex(doc => doc.key === key)
+        that.locaries.splice(modifiedIndex, 1)
       })
       this.watchLocation()
     },
@@ -107,40 +123,46 @@ export default {
       const store = this.$store
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(position => {
-          console.log(position)
-          store.commit('setPosition', position.coords)
-          store.dispatch('updateLocation')
-          that.updateLocaries()
+          const oldCoords = this.$store.getters.position
+          const newCoords = position.coords
+          if (JSON.stringify(oldCoords) !== JSON.stringify(newCoords)) {
+            store.commit('setPosition', position.coords)
+            store.dispatch('updateLocation')
+            that.updateLocaries()
+          }
         })
       }
     },
     sendMessage () {
       const store = this.$store
       const coords = this.$store.getters.position
+      const message = {
+        userRef: store.getters.userRef,
+        displayName: store.getters.displayName,
+        coordinates: new GeoPoint(coords.latitude, coords.longitude),
+        body: this.content,
+        createdAt: Timestamp.fromDate(new Date()),
+        accuracy: coords.accuracy,
+        readCount: 0
+      }
       geoLocary
-        .add({
-          userRef: store.getters.userRef,
-          displayName: store.getters.displayName,
-          coordinates: new GeoPoint(coords.latitude, coords.longitude),
-          body: this.content,
-          createdAt: new Date(),
-          accuracy: coords.accuracy
-        })
+        .add(message)
         .then((docRef) => {
           console.log(docRef)
           this.content = ''
+          this.scrollToBottom()
         })
     },
     onScroll (ev) {
       const that = this
       if (ev.target.scrollTop < 1 && !this.empty) {
-        this.loading = true
+        that.$store.commit('setLoading', true)
         this.queryLimit += 5
         const query = ref => ref.limit(this.queryLimit) // limit(8) .orderBy('d.createdAt', 'desc')
         this.geoQuery.updateCriteria({ query })
         this.geoQuery.on('ready', function () {
           that.locaries.sort((a, b) => a.createdAt.toMillis() > b.createdAt.toMillis())
-          that.loading = false
+          that.$store.commit('setLoading', false)
           that.scrollTo()
         })
       }
@@ -158,7 +180,9 @@ export default {
       this.$nextTick(() => {
         const container = this.$el.querySelector('.chat-container')
         container.scrollTop = container.scrollHeight
+        console.log(container.scrollHeight)
         this.totalChatHeight = this.$refs.chatContainer.scrollHeight
+        this.$store.commit('setLoading', false)
       })
     }
   },
@@ -188,29 +212,7 @@ export default {
   background-color: #f2f2f2;
   max-height: calc(100vh - 9.2rem);
 }
-.message {
-  margin-bottom: 3px;
-}
-.message.own {
-  text-align: right;
-}
-.message.own .content {
-  background-color: orange;
-}
-.chat-container .user {
-  font-size: 18px;
-  font-weight: bold;
-}
-.chat-container .content {
-  padding: 8px;
-  background-color: aliceblue;
-  border-radius: 10px;
-  display: inline-block;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14),
-    0 2px 1px -1px rgba(0, 0, 0, 0.12);
-  max-width: 80%;
-  word-wrap: break-word;
-}
+
 /* @media (max-width: 480px) {
   .chat-container .content {
     max-width: 80%;

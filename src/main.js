@@ -24,7 +24,9 @@ import {
   VTextField
 } from 'vuetify'
 import '../node_modules/vuetify/src/stylus/app.styl'
+import VueObserveVisibility from 'vue-observe-visibility'
 
+Vue.use(VueObserveVisibility)
 Vue.use(VueFire)
 Vue.use(Vuetify, {
   components: {
