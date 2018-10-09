@@ -25,7 +25,13 @@ import {
 } from 'vuetify'
 import '../node_modules/vuetify/src/stylus/app.styl'
 import VueObserveVisibility from 'vue-observe-visibility'
-
+import * as VueGoogleMaps from 'vue2-google-maps'
+Vue.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyCgYdhYLkKleeZbS8PrknHCzEe453hscg4',
+    libraries: 'places' // necessary for places input
+  }
+})
 Vue.use(VueObserveVisibility)
 Vue.use(VueFire)
 Vue.use(Vuetify, {
