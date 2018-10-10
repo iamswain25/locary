@@ -44,13 +44,21 @@ const AuthModule = {
       const position = state.position
       const getMaxDistance = activeUsers => {
         const values = Object.values(activeUsers).sort()
-        return values.length === 0
-          ? MAX_RADIUS
-          : values.length >= MAX_FRIENDS
-            ? values[MAX_FRIENDS - 1]
-            : values.slice(-1)[0] < MIN_RADIUS
+        const maxDistance =
+          typeof values[MAX_FRIENDS - 1] !== 'undefined'
+            ? values[MAX_FRIENDS - 1] < MIN_RADIUS
               ? MIN_RADIUS
-              : values.slice(-1)[0]
+              : values[MAX_FRIENDS - 1]
+            : values.length === 0
+              ? MAX_RADIUS
+              : values.slice(-1)[0] < MIN_RADIUS
+                ? MIN_RADIUS
+                : values.slice(-1)[0]
+        const listeningUser = values.filter(d => d <= maxDistance)
+        commit('setListeningUserCount', listeningUser.length)
+        commit('setListeningDistance', maxDistance)
+        console.log(`radius: ${maxDistance}km, users: ${listeningUser.length}`)
+        return maxDistance
       }
       const activeUsers = {}
       let listeningRadius = 1
@@ -59,32 +67,21 @@ const AuthModule = {
           center: [position.latitude, position.longitude],
           radius: listeningRadius
         })
+        let readyFiredOnce = false
         geoQuery.on('key_entered', function (key, location, distance) {
           if (state.realtimePresence.key !== key) {
             /** myself excluded */
             activeUsers[key] = distance
           }
-          commit(
-            'setListeningUserCount',
-            Object.keys(activeUsers).length < MAX_FRIENDS
-              ? Object.keys(activeUsers).length
-              : MAX_FRIENDS
-          )
-          if (Object.keys(activeUsers).length >= MAX_FRIENDS) {
-            const maxDistance = getMaxDistance(activeUsers)
-            console.log(`maxDistance: ${maxDistance}`)
-            commit('setListeningDistance', maxDistance)
-            resolve(maxDistance)
+          if (readyFiredOnce) {
+            getMaxDistance(activeUsers)
           }
         })
         geoQuery.on('key_exited', function (key, location, distance) {
           delete activeUsers[key]
-          commit(
-            'setListeningUserCount',
-            Object.keys(activeUsers).length < MAX_FRIENDS
-              ? Object.keys(activeUsers).length
-              : MAX_FRIENDS
-          )
+          if (distance <= state.listeningDistance) {
+            getMaxDistance(activeUsers)
+          }
         })
         geoQuery.on('ready', function () {
           if (
@@ -98,9 +95,8 @@ const AuthModule = {
               radius: listeningRadius
             })
           } else {
+            readyFiredOnce = true
             const maxDistance = getMaxDistance(activeUsers)
-            console.log(`maxDistance: ${maxDistance}km`)
-            commit('setListeningDistance', maxDistance)
             resolve(maxDistance)
           }
         })
