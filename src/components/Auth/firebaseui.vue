@@ -11,22 +11,28 @@ import 'firebase/auth'
 export default {
   created () {
     var store = this.$store
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      .then(function () {
-        const ui = new firebaseui.auth.AuthUI(firebase.auth())
-        const uiConfig = {
-          callbacks: {
-            signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-              store.dispatch('getUserRef', { authUser: authResult.user })
-              return false
+    firebase.auth().onAuthStateChanged(function (user) {
+      if (user) {
+        store.dispatch('getUserRef', { authUser: user })
+      } else {
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+          .then(function () {
+            const ui = new firebaseui.auth.AuthUI(firebase.auth())
+            const uiConfig = {
+              callbacks: {
+                signInSuccessWithAuthResult: function (authResult, redirectUrl) {
+                  store.dispatch('getUserRef', { authUser: authResult.user })
+                  return false
+                }
+              },
+              signInOptions: [
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID
+              ]
             }
-          },
-          signInOptions: [
-            firebase.auth.GoogleAuthProvider.PROVIDER_ID
-          ]
-        }
-        ui.start('#firebaseui-auth-container', uiConfig)
-      })
+            ui.start('#firebaseui-auth-container', uiConfig)
+          })
+      }
+    })
   }
 }
 </script>
