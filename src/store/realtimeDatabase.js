@@ -74,13 +74,13 @@ const AuthModule = {
             activeUsers[key] = distance
           }
           if (readyFiredOnce) {
-            getMaxDistance(activeUsers)
+            listeningRadius = getMaxDistance(activeUsers)
           }
         })
         geoQuery.on('key_exited', function (key, location, distance) {
           delete activeUsers[key]
-          if (distance <= state.listeningDistance) {
-            getMaxDistance(activeUsers)
+          if (distance <= listeningRadius && readyFiredOnce) {
+            listeningRadius = getMaxDistance(activeUsers)
           }
         })
         geoQuery.on('ready', function () {
@@ -96,8 +96,8 @@ const AuthModule = {
             })
           } else {
             readyFiredOnce = true
-            const maxDistance = getMaxDistance(activeUsers)
-            resolve(maxDistance)
+            const listeningRadius = getMaxDistance(activeUsers)
+            resolve(listeningRadius)
           }
         })
       })
