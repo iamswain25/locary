@@ -13,7 +13,8 @@
       <div class="user" v-if="index == 0">{{ message.displayName }}</div>
       <div style="margin-top: 5px"></div>
       <v-layout align-end>
-        <v-flex class="content" v-html="message.body">
+        <v-flex class="content">
+          <div v-html="message.body"></div>
         </v-flex>
         <v-flex class="time">
           <v-flex>{{(t => `${t.toISOString().substring(11,16)}` )(message.createdAt.toDate())}}</v-flex>
@@ -55,7 +56,7 @@ export default {
     },
     visibilityChanged (isVisible, message) {
       if (isVisible && !message.isRead) {
-        console.log(`isVisible: ${isVisible} key: ${message.key}`)
+        // console.log(`isVisible: ${isVisible} key: ${message.key}`)
         let { readCount, key } = message
         message.readCount++
         message.isRead = true
@@ -70,8 +71,9 @@ export default {
 <style scoped>
 .time {
   flex: 0 1 auto;
-  margin-left: 5px;
+  margin-left: 10px;
   line-height: 1;
+  margin-bottom: 3px;
 }
 .date {
   background-color: fuchsia;

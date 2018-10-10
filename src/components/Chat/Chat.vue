@@ -180,7 +180,7 @@ export default {
       this.$nextTick(() => {
         const container = this.$el.querySelector('.chat-container')
         container.scrollTop = container.scrollHeight
-        console.log(container.scrollHeight)
+        console.log(`.chat-container.scrollHeight: ${container.scrollHeight}`)
         this.totalChatHeight = this.$refs.chatContainer.scrollHeight
         this.$store.commit('setLoading', false)
       })
