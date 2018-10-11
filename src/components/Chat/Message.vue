@@ -72,6 +72,7 @@ export default {
 .time {
   flex: 0 1 auto;
   margin-left: 10px;
+  margin-right: 10px;
   line-height: 1;
   margin-bottom: 3px;
 }
@@ -87,6 +88,10 @@ export default {
 }
 .message.own {
   text-align: right;
+}
+.message.own .layout{
+  /* justify-content: flex-end; */
+  flex-direction: row-reverse;
 }
 .message.own .content {
   background-color: orange;
