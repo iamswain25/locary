@@ -134,6 +134,9 @@ export default {
       }
     },
     sendMessage () {
+      if (this.content.trim() === '') {
+        return false
+      }
       const store = this.$store
       const coords = this.$store.getters.position
       const message = {
