@@ -14,7 +14,17 @@ export default new Vuex.Store({
     locaries: [],
     userRef: null,
     displayName: null,
-    authUser: null
+    authUser: null,
+    rightDrawer: false
+  },
+  getters: {
+    loading: state => state.loading,
+    error: state => state.error,
+    locaries: state => state.locaries,
+    userRef: state => state.userRef,
+    authUser: state => state.authUser,
+    rightDrawer: state => state.rightDrawer,
+    displayName: state => state.displayName
   },
   mutations: {
     setLoading (state, payload) {
@@ -37,7 +47,8 @@ export default new Vuex.Store({
     },
     setAuthUser (state, payload) {
       state.authUser = payload
-    }
+    },
+    setRightDrawer: (state, payload) => (state.rightDrawer = payload)
   },
   actions: {
     clearError ({ commit }) {
@@ -77,13 +88,5 @@ export default new Vuex.Store({
       commit('setDisplayName', userData.displayName)
       dispatch('rtdb_presence', { uid })
     }
-  },
-  getters: {
-    loading: state => state.loading,
-    error: state => state.error,
-    locaries: state => state.locaries,
-    userRef: state => state.userRef,
-    authUser: state => state.authUser,
-    displayName: state => state.displayName
   }
 })

@@ -1,30 +1,22 @@
 <template>
   <transition-group name="list">
-    <div
-      class="message"
-      v-for="(message,index) in messages"
-      :key="index"
-      :class="{own: message.userRef.id == userRef.id}"
-    >
+    <div class="message" v-for="(message,index) in messages" :key="index" :class="{own: message.userRef.id == userRef.id}">
       <v-flex class="date" v-if="index === 0 || message.createdAt.toDate().toDateString() !== messages[index-1].createdAt.toDate().toDateString()">
         {{message.createdAt.toDate().toDateString()}}
       </v-flex>
       <div class="user" v-if="index > 0 && messages[index-1].userRef.id != message.userRef.id">{{ message.displayName }}</div>
       <div class="user" v-if="index == 0">{{ message.displayName }}</div>
       <div style="margin-top: 5px"></div>
-      <v-layout align-end>
+      <v-layout align-end @click="openThreads">
         <v-flex class="content">
           <div v-html="message.body"></div>
         </v-flex>
         <v-flex class="time">
           <v-flex>{{(t => `${t.toISOString().substring(11,16)}` )(message.createdAt.toDate())}}</v-flex>
-          <v-flex
-            v-if="!loading"
-            v-observe-visibility="{
+          <v-flex v-if="!loading" v-observe-visibility="{
               callback: (isVisible) => visibilityChanged(isVisible, message),
               throttle: 300
-            }"
-          >{{ message.readCount || 0 }} read</v-flex>
+            }">{{ message.readCount || 0 }} read</v-flex>
         </v-flex>
       </v-layout>
     </div>
@@ -63,6 +55,9 @@ export default {
         geoLocary.ref().doc(key).update({ 'd.readCount': readCount > 0 ? ++readCount : Number(1) })
         // geoLocary.ref()
       }
+    },
+    openThreads () {
+      this.$store.commit('setRightDrawer', true)
     }
   }
 }
@@ -89,7 +84,7 @@ export default {
 .message.own {
   text-align: right;
 }
-.message.own .layout{
+.message.own .layout {
   /* justify-content: flex-end; */
   flex-direction: row-reverse;
 }
@@ -111,7 +106,8 @@ export default {
   max-width: 80%;
   word-wrap: break-word;
 }
-.list-enter-active, .list-leave-active {
+.list-enter-active,
+.list-leave-active {
   transition: all 0.3s;
 }
 .list-enter, .list-leave-to /* .list-leave-active below version 2.1.8 */ {

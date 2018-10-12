@@ -37,8 +37,17 @@ export default {
       fixed: false,
       miniVariant: false,
       right: true,
-      rightDrawer: false,
       title: 'Locary'
+    }
+  },
+  computed: {
+    rightDrawer: {
+      get () {
+        return this.$store.getters.rightDrawer
+      },
+      set (newVal) {
+        this.$store.commit('setRightDrawer', newVal)
+      }
     }
   },
   name: 'App'
