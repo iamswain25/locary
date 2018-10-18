@@ -9,6 +9,7 @@ import VueFire from 'vuefire'
 import {
   Vuetify,
   VApp,
+  VAlert,
   VCard,
   VNavigationDrawer,
   VFooter,
@@ -21,7 +22,8 @@ import {
   VTextarea,
   VImg,
   transitions,
-  VTextField
+  VTextField,
+  VDialog
 } from 'vuetify'
 import '../node_modules/vuetify/src/stylus/app.styl'
 import VueObserveVisibility from 'vue-observe-visibility'
@@ -37,6 +39,7 @@ Vue.use(VueFire)
 Vue.use(Vuetify, {
   components: {
     VApp,
+    VAlert,
     VCard,
     VNavigationDrawer,
     VFooter,
@@ -49,7 +52,8 @@ Vue.use(Vuetify, {
     VTextarea,
     VImg,
     transitions,
-    VTextField
+    VTextField,
+    VDialog
   }
 })
 Vue.use(VueResource)

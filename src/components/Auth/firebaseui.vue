@@ -5,35 +5,8 @@
 </template>
 
 <script>
-import { firebase } from '../../store/firestore'
-import firebaseui from 'firebaseui'
-import 'firebase/auth'
+// import { firebase } from '@/store/firestore'
 export default {
-  created () {
-    var store = this.$store
-    firebase.auth().onAuthStateChanged(function (user) {
-      if (user) {
-        store.dispatch('getUserRef', { authUser: user })
-      } else {
-        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-          .then(function () {
-            const ui = new firebaseui.auth.AuthUI(firebase.auth())
-            const uiConfig = {
-              callbacks: {
-                signInSuccessWithAuthResult: function (authResult, redirectUrl) {
-                  store.dispatch('getUserRef', { authUser: authResult.user })
-                  return false
-                }
-              },
-              signInOptions: [
-                firebase.auth.GoogleAuthProvider.PROVIDER_ID
-              ]
-            }
-            ui.start('#firebaseui-auth-container', uiConfig)
-          })
-      }
-    })
-  }
 }
 </script>
 <style src="firebaseui/dist/firebaseui.css"></style>
@@ -42,6 +15,7 @@ export default {
   text-align: center;
   overflow: hidden;
   width: 100%;
-  height: 65px;
+  /* background-color: pink; */
+  /* height: 65px; */
 }
 </style>

@@ -19,4 +19,4 @@ const geoLocary = new GeoFirestore(firestore.collection('locaries'))
 const userCollection = firestore.collection('users')
 const GeoPoint = firebase.firestore.GeoPoint
 const Timestamp = firebase.firestore.Timestamp
-export { firestore, firebase, database, geoLocary, GeoPoint, Timestamp, userCollection, GeoFire }
+export { firestore, firebase, database, geoLocary, GeoPoint, Timestamp, userCollection, GeoFire, GeoFirestore }

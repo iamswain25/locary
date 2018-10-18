@@ -13,8 +13,8 @@ export default new Vuex.Store({
     error: null,
     locaries: [],
     userRef: null,
-    displayName: null,
-    authUser: null,
+    userInfo: null,
+    threadMessage: null,
     rightDrawer: false
   },
   getters: {
@@ -22,71 +22,50 @@ export default new Vuex.Store({
     error: state => state.error,
     locaries: state => state.locaries,
     userRef: state => state.userRef,
-    authUser: state => state.authUser,
     rightDrawer: state => state.rightDrawer,
-    displayName: state => state.displayName
+    threadMessage: state => state.threadMessage,
+    userInfo: state => state.userInfo
   },
   mutations: {
-    setLoading (state, payload) {
-      state.loading = payload
-    },
-    setError (state, payload) {
-      state.error = payload
-    },
-    clearError (state) {
-      state.error = null
-    },
-    setLocaries (state, payload) {
-      state.locaries = payload
-    },
-    setUserRef (state, payload) {
-      state.userRef = payload
-    },
-    setDisplayName (state, payload) {
-      state.displayName = payload
-    },
-    setAuthUser (state, payload) {
-      state.authUser = payload
-    },
-    setRightDrawer: (state, payload) => (state.rightDrawer = payload)
+    setLoading: (state, payload) => (state.loading = payload),
+    setError: (state, payload) => (state.error = payload),
+    clearError: state => (state.error = null),
+    setLocaries: (state, payload) => (state.locaries = payload),
+    setUserRef: (state, payload) => (state.userRef = payload),
+    setUserInfo: (state, payload) => (state.userInfo = payload),
+    setRightDrawer: (state, payload) => (state.rightDrawer = payload),
+    setThreadsMessage: (state, payload) => (state.threadMessage = payload)
   },
   actions: {
     clearError ({ commit }) {
       commit('clearError')
     },
-    /* always called whether displayName exists */
-    getUserRef ({ commit }, { authUser }) {
-      commit('setAuthUser', authUser)
-      const uid = authUser.uid
+    getUserRef ({ commit, state }, { authUser }) {
+      const { email, uid } = authUser
       const userRef = userCollection.doc(uid)
-      userRef.get().then(doc => {
-        if (doc.exists) {
-          const displayName = doc.get('displayName')
-          const loggedAt = new Date()
-          userRef.collection('userLog').add({
-            loggedAt
-          })
-          commit('setUserRef', userRef)
-          commit('setDisplayName', displayName)
-          commit('update_rtdb_presence', { uid, displayName })
-        } else {
-          commit('setUserRef', null)
-          commit('setDisplayName', null)
-        }
-      })
-    },
-    /* only called whether displayName doens't exist */
-    setUserRef ({ commit, state, dispatch }, userData) {
-      const uid = state.authUser.uid
-      const userRef = userCollection.doc(uid)
-      userRef.set(userData)
       const loggedAt = new Date()
+      let displayName = null
+      let photoURL = null
       userRef.collection('userLog').add({
         loggedAt
       })
       commit('setUserRef', userRef)
-      commit('setDisplayName', userData.displayName)
-      dispatch('rtdb_presence', { uid })
+      userRef.get().then(doc => {
+        if (doc.exists) {
+          displayName = doc.get('displayName')
+          photoURL = doc.get('photoURL')
+          commit('setUserInfo', { displayName, photoURL })
+        } else {
+          const createdAt = new Date()
+          displayName = authUser.displayName
+          photoURL = authUser.photoURL
+          commit('setUserInfo', { displayName, photoURL })
+          userRef.set({ createdAt, displayName, photoURL, email })
+        }
+        if (state.realtimeDatabase.realtimePresence) {
+          commit('update_rtdb_presence', { uid, displayName, email, photoURL })
+        }
+      })
     }
   }
 })
