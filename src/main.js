@@ -23,7 +23,8 @@ import {
   VImg,
   transitions,
   VTextField,
-  VDialog
+  VDialog,
+  VDivider
 } from 'vuetify'
 import '../node_modules/vuetify/src/stylus/app.styl'
 import VueObserveVisibility from 'vue-observe-visibility'
@@ -53,7 +54,8 @@ Vue.use(Vuetify, {
     VImg,
     transitions,
     VTextField,
-    VDialog
+    VDialog,
+    VDivider
   }
 })
 Vue.use(VueResource)

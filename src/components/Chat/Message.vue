@@ -10,7 +10,10 @@
         class="date"
         v-if="index === 0 || message.createdAt.toDate().toDateString() !== messages[index-1].createdAt.toDate().toDateString()"
       >{{message.createdAt.toDate().toDateString()}}</v-flex>
-      <div class="mt-2"></div>
+      <div
+        class="mt-2"
+        v-if="(messages[index-1] && ((t1, t2) => t1.getTime() - t2.getTime() > 60000 )(message.createdAt.toDate(), messages[index-1].createdAt.toDate()))"
+      />
       <div
         class="user"
         v-if="index == 0 || (index > 0 && messages[index-1].userRef.id != message.userRef.id)"
@@ -20,7 +23,9 @@
           <img
             :src="message.photoURL"
             alt="photo"
-            v-if="messages[index+1] === undefined || messages[index+1].userRef.id != message.userRef.id"
+            v-if="messages[index+1] === undefined
+              || (messages[index-1] && ((t1, t2) => t1.getTime() - t2.getTime() > 60000 )(message.createdAt.toDate(), messages[index-1].createdAt.toDate()))
+              || messages[index+1].userRef.id != message.userRef.id"
           >
         </v-flex>
         <v-flex class="content">

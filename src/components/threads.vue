@@ -57,6 +57,10 @@
           v-if="index === 0 || (thread[index-1] && thread.createdAt.toDate().toDateString() !== thread[index-1].createdAt.toDate().toDateString())"
         >{{thread.createdAt.toDate().toDateString()}}</v-flex>
         <div
+          class="mt-2"
+          v-if="threads[index-1] && ((t1, t2) => t1.getTime() - t2.getTime() > 60000 )(thread.createdAt.toDate(), threads[index-1].createdAt.toDate())"
+        />
+        <div
           class="displayName"
           v-if="index == 0 || (index > 0 && threads[index-1].userRef.id != thread.userRef.id)"
         >{{thread.displayName}}</div>
@@ -66,7 +70,9 @@
               :src="thread.photoURL"
               alt="photo"
               @error="imgUrlAlt"
-              v-if="threads[index+1] === undefined || threads[index+1].userRef.id != thread.userRef.id"
+              v-if="threads[index+1] === undefined
+              || (threads[index-1] && ((t1, t2) => t1.getTime() - t2.getTime() > 60000 )(thread.createdAt.toDate(), threads[index-1].createdAt.toDate()))
+              || threads[index+1].userRef.id != thread.userRef.id"
             >
           </v-flex>
           <v-flex class="body" v-html="thread.body"/>
@@ -100,7 +106,7 @@
         </div>
         <button type="button" class="stamp" @click="sendThreads">send</button>
       </v-layout>
-      <v-layout v-else>
+      <v-layout v-else justify-center class="mt-3">
         <v-btn @click="signIn">Sign in &amp; contribute to locaries</v-btn>
       </v-layout>
     </v-flex>
@@ -148,7 +154,7 @@
   padding: 8px;
   background-color: aliceblue;
   border-radius: 10px;
-  max-width: 70%;
+  max-width: 60%;
 }
 .threads .photo {
   margin-left: 3px;
