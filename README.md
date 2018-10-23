@@ -1,6 +1,7 @@
 # locary
 
-> public local story share platform
+https://iamswain25.github.io/locary-v0.1-chat
+> public local story share platform (with chat enabled)
 
 ## Build Setup
 
@@ -19,6 +20,12 @@ npm run build --report
 
 # run unit tests
 npm run unit
+
+# build and deploy to gh-page
+npm run deploy-gh-pages
+
+# build and deploy to firebase
+npm run deploy-firebase
 
 # run all tests
 npm test

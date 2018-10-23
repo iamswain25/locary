@@ -6,6 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "node build/dev-server.js",
+    "deploy-gh-pages": "node build/build.js && gh-pages -d dist",
+    "deploy-firebase": "node build/build.js && firebase deploy",
     "start": "node build/dev-server.js",
     "build": "node build/build.js",
     "unit": "cross-env BABEL_ENV=test karma start test/unit/karma.conf.js --single-run",
@@ -61,6 +63,7 @@
     "extract-text-webpack-plugin": "^3.0.0",
     "file-loader": "^1.1.5",
     "friendly-errors-webpack-plugin": "^1.6.1",
+    "gh-pages": "^2.0.1",
     "html-webpack-plugin": "^2.30.1",
     "http-proxy-middleware": "^0.17.4",
     "inject-loader": "^3.0.1",
